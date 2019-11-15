@@ -1,6 +1,10 @@
+
+#include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <algorithm>
+#include <iostream>
+
+using namespace std;
 
 int main(int argc, char **argv) {
     char gap[] = "-";
@@ -34,11 +38,11 @@ int main(int argc, char **argv) {
             // output previous line before overwriting id
             // but ONLY if id actually contains something
             if(!id.empty()){
-                std::cout << id << " : " << DNA_sequence << std::endl;
+                // std::cout << id << " : " << DNA_sequence << std::endl;
                 n = std::count(DNA_sequence.begin(), DNA_sequence.end(), gap[0]);
                 number_seq+=1;
 
-                std::cout <<" Number of Gaps " << n << "  --  "<<number_seq<< std::endl;
+                //std::cout <<" Number of Gaps " << n << "  --  "<<number_seq<< std::endl;
 
                 gap_global +=n;
                 n=0;
@@ -54,20 +58,34 @@ int main(int argc, char **argv) {
     // output final entry
     // but ONLY if id actually contains something
     if(!id.empty()){
-        std::cout << id << " : " << DNA_sequence << std::endl;
+        // std::cout << id << " : " << DNA_sequence << std::endl;
         n = std::count(DNA_sequence.begin(), DNA_sequence.end(), gap[0]);
         number_seq+=1;
-        std::cout <<" Number of Gaps " << n << "  --  "<<number_seq<< std::endl;
+        //std::cout <<" Number of Gaps " << n << "  --  "<<number_seq<< std::endl;
 
         gap_global +=n;
-    
-        std::cout <<"\n** ** TOTAL of Gaps " << gap_global << std::endl;
-        std::cout <<"** ** TOTAL of Sequences " << number_seq << std::endl;
-        std::cout <<"** ** AVG Gaps " << (float) gap_global/number_seq << std::endl;
 
+        //ofstream totGapFile;
+        //ofstream avgGapFile;
+        //myfile << "Writing this to a file.\n";
+        std::string totGapName, avgGapName;
+        totGapName = id + ".totGap";
+        avgGapName = id +".avgGap";
+        std::ofstream totGapFile (totGapName);
+        std::ofstream avgGapFile (avgGapName);
+
+        std::cout <<"**TOTAL_GAPS** " << gap_global << std::endl;
+        totGapFile << gap_global << std::endl;
+
+        std::cout <<"**NUMBER_SEQS** " << number_seq << std::endl;
+        std::cout <<"**AVG_GAPS** " << (float) gap_global/number_seq << std::endl;
+        avgGapFile << (float) gap_global/number_seq << std::endl;
+
+        totGapFile.close();
+        avgGapFile.close();
         
     }
 
 }
 // g++ script.cpp
-// ./a.out /home/edgar/CBCRG/regressive_gap_accuracy/data/test/seatoxin.dpa_1000.CLUSTALO.with.CLUSTALO.tree.aln
+// ./a.out ./data/test/seatoxin.dpa_1000.CLUSTALO.with.CLUSTALO.tree.aln
