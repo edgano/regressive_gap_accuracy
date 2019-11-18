@@ -84,10 +84,34 @@ process relationScoreGap {
       set val(id), file(score), file(avgGap),file(totGap) from score_gaps
 
     output:
-     set val(id), file("*.TcAvgReg"), file("*.TcTotReg") into regressionOut
+     set val(id), file("*.TcAvgReg"), file("*.TcTotReg"), file("merge.txt") into regressionOut
 
     script:
     """
+    echo ${id}
+    IFS='.'
+    read -ra ADDR <<< "${id}"       # str is read into an array as tokens separated by IFS
+    for i in "\${ADDR[@]}"; do      # access each element of array
+      echo "\$i"
+    done
+
+    family=\${ADDR[0]}
+    aligner=\${ADDR[2]}
+    tree=\${ADDR[4]}
+
+    ###                                   ###
+    ## save the data in the correct format ##
+    ###                                   ###
+    echo "\$family - \$aligner - \$tree"
+    printf "%s " "\$family \$aligner \$tree " >> merge.txt
+    cat ${score} >> merge.txt
+    printf " " >> merge.txt
+    cat ${totGap} >> merge.txt
+    printf " " >> merge.txt
+    cat ${avgGap} >> merge.txt
+    printf "\n" >> merge.txt
+
+    ## save the data in individual files
     echo "TC_Score - AVG_Gap" >> ${id}.TcAvgReg
     cat ${score} >> ${id}.TcAvgReg
     printf " - " >> ${id}.TcAvgReg 
