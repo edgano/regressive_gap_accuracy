@@ -1,8 +1,5 @@
 
 
-
-
-
 params.alignments = "${baseDir}/data/test/*.aln"
 params.score = "${baseDir}/data/test/*.tc"
 params.output = "${baseDir}/results/"
@@ -13,7 +10,7 @@ if ( params.alignments ) {
   Channel
   .fromPath(params.alignments)
   .map { item -> [ item.baseName, item] }
-  .view()
+  //.view()
   .set { aln }
 }
 
@@ -22,7 +19,7 @@ if ( params.score ) {
   Channel
   .fromPath(params.score)
   .map { item -> [ item.baseName, item] }
-  .view()
+  //.view()
   .set { scoreCh }
 }
 
@@ -85,41 +82,46 @@ process relationScoreGap {
 
     output:
      set val(id), file("*.TcAvgReg"), file("*.TcTotReg"), file("merge.txt") into regressionOut
+     set val(id), file("merge.txt") into combineOut
 
     script:
-    """
-    echo ${id}
-    IFS='.'
-    read -ra ADDR <<< "${id}"       # str is read into an array as tokens separated by IFS
-    for i in "\${ADDR[@]}"; do      # access each element of array
-      echo "\$i"
-    done
+      """
+      ## echo ${id} val(aligner), val(tree), val(score), val(totGap), val(avgGap)
+      IFS='.'
+      read -ra ADDR <<< "${id}"       # str is read into an array as tokens separated by IFS
+      for i in "\${ADDR[@]}"; do      # access each element of array
+        echo "\$i"
+      done
 
-    family=\${ADDR[0]}
-    aligner=\${ADDR[2]}
-    tree=\${ADDR[4]}
+      family=\${ADDR[0]}
+      aligner=\${ADDR[2]}
+      tree=\${ADDR[4]}
 
-    ###                                   ###
-    ## save the data in the correct format ##
-    ###                                   ###
-    echo "\$family - \$aligner - \$tree"
-    printf "%s " "\$family \$aligner \$tree " >> merge.txt
-    cat ${score} >> merge.txt
-    printf " " >> merge.txt
-    cat ${totGap} >> merge.txt
-    printf " " >> merge.txt
-    cat ${avgGap} >> merge.txt
-    printf "\n" >> merge.txt
+      ###                                   ###
+      ## save the data in the correct format ##
+      ###                                   ###
+      # echo "\$family - \$aligner - \$tree"
+      printf "%s " "\$family \$aligner \$tree " >> merge.txt
+      cat ${score} >> merge.txt
+      printf " " >> merge.txt
+      cat ${totGap} >> merge.txt
+      printf " " >> merge.txt
+      cat ${avgGap} >> merge.txt
+      printf "" >> merge.txt
 
-    ## save the data in individual files
-    echo "TC_Score - AVG_Gap" >> ${id}.TcAvgReg
-    cat ${score} >> ${id}.TcAvgReg
-    printf " - " >> ${id}.TcAvgReg 
-    cat ${avgGap} >> ${id}.TcAvgReg 
+      ## save the data in individual files
+      echo "TC_Score - AVG_Gap" >> ${id}.TcAvgReg
+      cat ${score} >> ${id}.TcAvgReg
+      printf " - " >> ${id}.TcAvgReg 
+      cat ${avgGap} >> ${id}.TcAvgReg 
 
-    echo "TC_Score - TOT_Gap" >> ${id}.TcTotReg
-    cat ${score} >> ${id}.TcTotReg
-    printf " - " >> ${id}.TcTotReg 
-    cat ${totGap} >> ${id}.TcTotReg 
+      echo "TC_Score - TOT_Gap" >> ${id}.TcTotReg
+      cat ${score} >> ${id}.TcTotReg
+      printf " - " >> ${id}.TcTotReg 
+      cat ${totGap} >> ${id}.TcTotReg 
     """
 }
+
+combineOut
+  .collectFile(name:'merge.txt', newLine: true, storeDir:'/home/edgar/CBCRG/regressive_gap_accuracy/test')
+  .println{ it.text }
