@@ -123,5 +123,6 @@ process relationScoreGap {
 }
 
 combineOut
-  .collectFile(name:'merge.txt', newLine: true, storeDir:'/home/edgar/CBCRG/regressive_gap_accuracy/test')
+  .collectFile(name:'result.txt', newLine: true, storeDir:'/home/edgar/CBCRG/regressive_gap_accuracy/test')
+  { value,file -> file }
   .println{ it.text }
