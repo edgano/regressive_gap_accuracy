@@ -1,2 +1,7 @@
-TC_Score - AVG_Gap
-57.1 - 12.366
+Family  Align Tree  TC_Score  AVG_Gap
+seatoxin  CO  CO  57.1  12.366
+seatoxin  CO  PT  67.1  10.366
+seatoxin  FFTNS1  CO  77.1  3.66
+seatoxin  FFTNS1  PT  37.1  22.366
+seatoxin  GINS1  CO  57.1  15.366
+seatoxin  GINS1  PT  62.1  8.366
