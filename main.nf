@@ -1,9 +1,14 @@
 
 
-params.alignments = "${baseDir}/results/rename/*.aln"
+params.alignments = null //"${baseDir}/data/aln/*.aln"
+//uncomment convertFileName & this path
+
+
+params.rename = "${baseDir}/results/rename/*.aln"
 params.score = "${baseDir}/data/tc_score/*.tc"
 params.output = "${baseDir}/results/"
 
+params.convert2 = false 
 
 // Channels containing sequences
 if ( params.alignments ) {
@@ -15,6 +20,15 @@ if ( params.alignments ) {
 }
 
 // Channels containing sequences
+if ( params.rename ) {
+  Channel
+  .fromPath(params.rename)
+  .map { item -> [ item.baseName, item] }
+  //.view()
+  .set { alnRename }
+}
+
+// Channels containing sequences
 if ( params.score ) {
   Channel
   .fromPath(params.score)
@@ -22,7 +36,7 @@ if ( params.score ) {
   //.view()
   .set { scoreCh }
 }
-
+/**
 process convertFileName {
     tag "${id}"
     publishDir "${params.output}/rename", mode: 'copy', overwrite: true        //TODO diff folder for diff outChannel
@@ -31,8 +45,7 @@ process convertFileName {
       set val(id), file(aln) from aln
 
     output:
-     set val (id), file(aln) into alnRename
-     set val (id), file(aln) into alnRename2
+     set val (id), file("*.aln") into alnRename
 
     script:
     """
@@ -40,15 +53,14 @@ process convertFileName {
     rename 's/.with././g' *.aln
     rename 's/.tree././g' *.aln
     """
-}
-alnRename.view()
+}**/
 
 process getAlnGaps {
     tag "${id}"
     publishDir "${params.output}/numberGaps", mode: 'copy', overwrite: true        //TODO diff folder for diff outChannel
 
     input:
-      set val(id), file(aln) from alnRename2
+      set val(id), file(aln) from alnRename
 
     output:
      set val(id), file("*.avgGap"), file("*.totGap") into gapsOut
@@ -144,7 +156,7 @@ process relationScoreGap {
 
 
 combineOut
-  .collectFile(name:'result.txt', newLine: true, storeDir:"${baseDir}/test")
+  .collectFile(name:'result.txt', newLine: true, storeDir:"${baseDir}/finalCSV")
   { value, file -> file }
   .println{ it.text }
 
