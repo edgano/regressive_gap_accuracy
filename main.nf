@@ -1,6 +1,6 @@
 
 
-params.alignments = "${baseDir}/data/test/*.aln"
+params.alignments = "${baseDir}/results/rename/*.aln"
 params.score = "${baseDir}/data/tc_score/*.tc"
 params.output = "${baseDir}/results/"
 
@@ -23,12 +23,32 @@ if ( params.score ) {
   .set { scoreCh }
 }
 
+process convertFileName {
+    tag "${id}"
+    publishDir "${params.output}/rename", mode: 'copy', overwrite: true        //TODO diff folder for diff outChannel
+
+    input:
+      set val(id), file(aln) from aln
+
+    output:
+     set val (id), file(aln) into alnRename
+     set val (id), file(aln) into alnRename2
+
+    script:
+    """
+    rename 's/.dpa_1000./.dpa_align.1000./g' *.aln
+    rename 's/.with././g' *.aln
+    rename 's/.tree././g' *.aln
+    """
+}
+alnRename.view()
+
 process getAlnGaps {
     tag "${id}"
     publishDir "${params.output}/numberGaps", mode: 'copy', overwrite: true        //TODO diff folder for diff outChannel
 
     input:
-      set val(id), file(aln) from aln
+      set val(id), file(aln) from alnRename2
 
     output:
      set val(id), file("*.avgGap"), file("*.totGap") into gapsOut
@@ -71,7 +91,6 @@ avgGapFile.close()
 scoreCh
   .cross (gapsOut)
   .map { it -> [it[0][0], it[0][1], it[1][1], it[1][2]] }
-  .view()
   .set { score_gaps }
 
 process relationScoreGap {
@@ -95,7 +114,7 @@ process relationScoreGap {
       done
 
       family=\${ADDR[0]}
-      aligner=\${ADDR[2]}
+      aligner=\${ADDR[3]}
       tree=\${ADDR[4]}
 
       ###                                   ###
@@ -125,6 +144,7 @@ process relationScoreGap {
 
 
 combineOut
-  .collectFile(name:'result.txt', newLine: true, storeDir:'${baseDir}/test')
-  { value,file -> file }
+  .collectFile(name:'result.txt', newLine: true, storeDir:"${baseDir}/test")
+  { value, file -> file }
   .println{ it.text }
+
