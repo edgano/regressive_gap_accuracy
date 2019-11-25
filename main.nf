@@ -1,7 +1,7 @@
 
 
 params.alignments = "${baseDir}/data/test/*.aln"
-params.score = "${baseDir}/data/test/*.tc"
+params.score = "${baseDir}/data/tc_score/*.tc"
 params.output = "${baseDir}/results/"
 
 
@@ -71,6 +71,7 @@ avgGapFile.close()
 scoreCh
   .cross (gapsOut)
   .map { it -> [it[0][0], it[0][1], it[1][1], it[1][2]] }
+  .view()
   .set { score_gaps }
 
 process relationScoreGap {
@@ -82,7 +83,7 @@ process relationScoreGap {
 
     output:
      set val(id), file("*.TcAvgReg"), file("*.TcTotReg"), file("merge.txt") into regressionOut
-     set val(id), file("merge.txt") into combineOut
+     set val(id), file('merge.txt') into combineOut
 
     script:
       """
@@ -122,7 +123,8 @@ process relationScoreGap {
     """
 }
 
+
 combineOut
-  .collectFile(name:'result.txt', newLine: true, storeDir:'/home/edgar/CBCRG/regressive_gap_accuracy/test')
+  .collectFile(name:'result.txt', newLine: true, storeDir:'${baseDir}/test')
   { value,file -> file }
   .println{ it.text }
