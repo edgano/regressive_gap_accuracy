@@ -1,4 +1,4 @@
-
+#!/usr/bin/env nextflow
 
 params.alignments = null //"${baseDir}/data/aln/*.aln"
 //uncomment convertFileName & this path
@@ -63,7 +63,7 @@ process getAlnGaps {
       set val(id), file(aln) from alnRename
 
     output:
-     set val(id), file("*.avgGap"), file("*.totGap") into gapsOut
+     set val(id), file("*.totGap"), file("*.numSeq"), file("*.alnLen") into gapsOut
 
     script:
     """
@@ -79,9 +79,12 @@ avgGap = 0
 auxGap = 0
 
 totGapName= "${id}.totGap"
-avgGapName= "${id}.avgGap"
+numbSeqName= "${id}.numSeq"
+alnLenName= "${id}.alnLen"
+
 totGapFile= open(totGapName,"w+")
-avgGapFile= open(avgGapName,"w+")
+numSeqFile= open(numbSeqName,"w+")
+alnLenFile= open(alnLenName,"w+")
 
 record = list(SeqIO.parse("${aln}", "fasta"))
 
@@ -94,15 +97,17 @@ avgGap = Decimal(globalGap) / Decimal(len(record))
 print "NumSeq: ",len(record)," GlobalGap: ",globalGap," AVG_Gap:",round(avgGap,3)
 
 totGapFile.write(str(globalGap))
-avgGapFile.write(str(round(avgGap,3)))
+alnLenFile.write(str(len(record[0])))
+numSeqFile.write(str(len(record)))
 
 totGapFile.close()
-avgGapFile.close()
+alnLenFile.close()
+numSeqFile.close()
     """
 }
 scoreCh
   .cross (gapsOut)
-  .map { it -> [it[0][0], it[0][1], it[1][1], it[1][2]] }
+  .map { it -> [it[0][0], it[0][1], it[1][1], it[1][2], it[1][3]] }
   .set { score_gaps }
 
 process relationScoreGap {
@@ -110,10 +115,9 @@ process relationScoreGap {
     publishDir "${params.output}/tc_gap", mode: 'copy', overwrite: true        //TODO diff folder for diff outChannel
 
     input:
-      set val(id), file(score), file(avgGap),file(totGap) from score_gaps
+      set val(id), file(score), file(totGap), file(numSeq),file(alnLen) from score_gaps
 
     output:
-     set val(id), file("*.TcAvgReg"), file("*.TcTotReg"), file("merge.txt") into regressionOut
      set val(id), file('merge.txt') into combineOut
 
     script:
@@ -138,19 +142,10 @@ process relationScoreGap {
       printf " " >> merge.txt
       cat ${totGap} >> merge.txt
       printf " " >> merge.txt
-      cat ${avgGap} >> merge.txt
+      cat ${numSeq} >> merge.txt
       printf "" >> merge.txt
-
-      ## save the data in individual files
-      echo "TC_Score - AVG_Gap" >> ${id}.TcAvgReg
-      cat ${score} >> ${id}.TcAvgReg
-      printf " - " >> ${id}.TcAvgReg 
-      cat ${avgGap} >> ${id}.TcAvgReg 
-
-      echo "TC_Score - TOT_Gap" >> ${id}.TcTotReg
-      cat ${score} >> ${id}.TcTotReg
-      printf " - " >> ${id}.TcTotReg 
-      cat ${totGap} >> ${id}.TcTotReg 
+      cat ${alnLen} >> merge.txt
+      printf "" >> merge.txt
     """
 }
 
